@@ -2,7 +2,7 @@ import UIKit
 //отвечает за отражение списка задач
 
 
-class TaskListViewController: UITableViewController, UITextViewDelegate, UISearchBarDelegate, DetailViewControllerDelegate {
+class TaskListViewController: UITableViewController, UITextViewDelegate, UISearchBarDelegate {
     //сюда нужно как то закинуть api
     var tasks: [ToDo] = [
         ToDo(id: 1, title: "Task1", description: "Описание задачи 1", createdDate: Date(), isCompleted: false)
@@ -22,14 +22,13 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "TaskCell")
 
         tableView.backgroundColor = UIColor.black
-        tableView.delegate = self
         tableView.dataSource = self
         setupNavigationBar()
         setupSearchBar()
     }
 
     private func setupSearchBar() {
-        searchBar.delegate = self
+//        searchBar.delegate = self
         searchBar.sizeToFit()
         searchBar.barTintColor = UIColor.black
         searchBar.backgroundColor = UIColor.black
@@ -100,7 +99,7 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
     
         @objc private func addTask() {
             let detailViewController = DetailViewController()
-            detailViewController.delegate = self
+//            detailViewController.delegate = self
             detailViewController.isNewTask = true
             self.navigationController?.pushViewController(detailViewController, animated: true)
         }
@@ -129,7 +128,6 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
 
         cell.textLabel?.textColor = UIColor.white
         cell.detailTextLabel?.textColor = UIColor.white
-
         
         cell.backgroundColor = UIColor.black
        
@@ -146,10 +144,7 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
         let detailViewController = DetailViewController()
         detailViewController.task = selectedTask
         navigationController?.pushViewController(detailViewController, animated: true)
-        
     }
-
-    
 }
 
 

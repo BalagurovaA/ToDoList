@@ -1,32 +1,7 @@
-//
-//  DetailViewController.swift
-//  ToDoList
-//
-//  Created by Kristofer Sartorial on 11/15/24.
-//
-
 import UIKit
 
-//протокол для добавления тасков
-protocol DetailViewControllerDelegate: AnyObject {
-    func didAddTask(_ task: ToDo)
-}
+class DetailViewController: UIViewController, UITextViewDelegate {
 
-
-class DetailViewController: UIViewController, UITextViewDelegate, DetailViewControllerDelegate {
-    func didAddTask(_ task: ToDo) {
-
-    }
-    
-    
-    
-//    добавила сейчас
-//    func didAddTask(_ task: ToDo) {
-//
-//    }
-    
-    //делегат для добавления тасков
-    weak var delegate: DetailViewControllerDelegate?
     var task: ToDo?
     var isNewTask: Bool = false
     var textView: UITextView!
@@ -71,7 +46,7 @@ class DetailViewController: UIViewController, UITextViewDelegate, DetailViewCont
     
     @objc private func addTask() -> Bool {
         let detailViewController = DetailViewController()
-        detailViewController.delegate = self // Устанавливаем делегата
+//        detailViewController.delegate = self // Устанавливаем делегата
         detailViewController.isNewTask = true
         if ((self.navigationController?.pushViewController(detailViewController, animated: true)) != nil) {
          return true
@@ -99,7 +74,6 @@ class DetailViewController: UIViewController, UITextViewDelegate, DetailViewCont
                 createdDate: Date(),
                 isCompleted: false
             )
-            delegate?.didAddTask(newTask)
         }
         else if var taskToUpdate = task {
             taskToUpdate.title = title
@@ -110,11 +84,3 @@ class DetailViewController: UIViewController, UITextViewDelegate, DetailViewCont
         navigationController?.popViewController(animated: true) // Возврат на предыдущую страницу
         }
 }
-
-extension DetailViewController {
-    func textViewDidEndEditing(_ textView: UITextView) {
-        saveTask()
-    }
-}
-    
-    
