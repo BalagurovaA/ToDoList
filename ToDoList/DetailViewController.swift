@@ -5,51 +5,116 @@
 //  Created by Kristofer Sartorial on 11/15/24.
 //
 
-import Foundation
 import UIKit
 
-class DetailViewController: UIViewController {
+//протокол для добавления тасков
+protocol DetailViewControllerDelegate: AnyObject {
+    func didAddTask(_ task: ToDo)
+}
+
+
+class DetailViewController: UIViewController, UITextViewDelegate, DetailViewControllerDelegate {
+    func didAddTask(_ task: ToDo) {
+
+    }
     
+    
+    
+//    добавила сейчас
+//    func didAddTask(_ task: ToDo) {
+//
+//    }
+    
+    //делегат для добавления тасков
+    weak var delegate: DetailViewControllerDelegate?
     var task: ToDo?
     var isNewTask: Bool = false
-    
-    private let titleTextField = UITextField()
-    private let descriptionTextView = UITextView()
-    
+    var textView: UITextView!
     
     override func viewDidLoad() {
-        
         super.viewDidLoad() //вызов метода род класса
-        setUpUI()
-        configureView()
-//        if let task = task {
-//            title = task.title
-//        }
+        view.backgroundColor = UIColor.black
+        setUpTextView()
+
     }
     
-    private func setUpUI() {
-        view.backgroundColor = .white
-        titleTextField.borderStyle = .roundedRect //работа с углами
-        titleTextField.placeholder = "какой то текст"
-        view.addSubview(titleTextField)
+    //функция для работы с текстовым объектом
+    private func setUpTextView() {
+        textView = UITextView()
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.font = UIFont.systemFont(ofSize: 16)
+        textView.backgroundColor = UIColor.black
+        textView.textColor = UIColor.white
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.paragraphSpacing = 20
         
-        descriptionTextView.layer.borderWidth = 1
-        descriptionTextView.layer.borderColor = UIColor.lightGray.cgColor
-        descriptionTextView.layer.cornerRadius = 5
-        view.addSubview(descriptionTextView)
+    
+        view.addSubview(textView)
         
-    }
-    private func configureView() {
-        if let task = task {
-            titleTextField.text = task.title
-            descriptionTextView.text = task.description
-        } else {
-            titleTextField.text = " "
-            descriptionTextView.text = " "
-        }
-    }
-    
-    
-    АНЯ ЗАПУШЬ СВОИ РЕЗУЛЬАТЫЫЫЫЫЫЫЫЫ!!!!!!
-    
+        NSLayoutConstraint.activate([
+            textView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0),
+            textView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            textView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            textView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
+      ])
+        
+        //запуск делегата для сохранения и работы между классами
+        textView.delegate = self
+        
+      func getTitle() -> String {
+          let lines = textView.text.split(separator: "\n", omittingEmptySubsequences: true)
+          return lines.first.map(String.init) ?? ""
+          
+      }
 }
+    
+    
+    @objc private func addTask() -> Bool {
+        let detailViewController = DetailViewController()
+        detailViewController.delegate = self // Устанавливаем делегата
+        detailViewController.isNewTask = true
+        if ((self.navigationController?.pushViewController(detailViewController, animated: true)) != nil) {
+         return true
+        }
+        return false
+    }
+
+    
+    
+    
+    
+    @objc private func saveTask() {
+        guard let text = textView.text else {
+            return
+        }
+        
+        let lines = text.split(separator: "\n")
+        let title = lines.first.map(String.init) ?? ""
+        let descrip = String(text)
+        if isNewTask {
+            let newTask = ToDo(
+                id: UUID().hashValue,
+                title: title,
+                description: descrip,
+                createdDate: Date(),
+                isCompleted: false
+            )
+            delegate?.didAddTask(newTask)
+        }
+        else if var taskToUpdate = task {
+            taskToUpdate.title = title
+            taskToUpdate.description = descrip
+            self.task = taskToUpdate
+        }
+
+        navigationController?.popViewController(animated: true) // Возврат на предыдущую страницу
+        }
+}
+
+extension DetailViewController {
+    func textViewDidEndEditing(_ textView: UITextView) {
+        saveTask()
+    }
+}
+    
+    

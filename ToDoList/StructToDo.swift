@@ -13,5 +13,3 @@ struct ToDo {
     var createdDate: Date
     var isCompleted: Bool
 }
-
-
