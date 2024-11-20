@@ -1,15 +1,13 @@
 import UIKit
-//отвечает за отражение списка задач
 
-
-class TaskListViewController: UITableViewController, UITextViewDelegate, UISearchBarDelegate {
-    //сюда нужно как то закинуть api
-    var tasks: [ToDo] = [
-        ToDo(id: 1, title: "Task1", description: "Описание задачи 1", createdDate: Date(), isCompleted: false)
-    ]
+class TaskListViewController: UITableViewController, UITextViewDelegate, UISearchBarDelegate, DetailViewControllerDelegate {
+    
+    
+    var tasks: [ToDo] = []
     var filteredTasks: [ToDo] = []
     var isSearching = false
     let searchBar = UISearchBar()
+    
 
     private let taskCountLabel = UILabel()
     private let addButton = UIButton(type: .system)
@@ -17,18 +15,22 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-//       чтобы повторно использовать экземпляры ячеек когда они выходят за пределы видимости на экране
+        setUpUI()
+    
+    }
+
+    private func setUpUI() {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "TaskCell")
 
         tableView.backgroundColor = UIColor.black
-        tableView.dataSource = self
         setupNavigationBar()
         setupSearchBar()
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 44
     }
+    
 
     private func setupSearchBar() {
-//        searchBar.delegate = self
         searchBar.sizeToFit()
         searchBar.barTintColor = UIColor.black
         searchBar.backgroundColor = UIColor.black
@@ -39,21 +41,20 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
         tableView.tableHeaderView = searchBar
     }
 
-    
-     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-         if searchText.isEmpty {
-             isSearching = false
-             filteredTasks = []
-         }
-        filteredTasks = tasks.filter { task in
-            return task.title.lowercased().contains(searchText.lowercased())
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchText.isEmpty {
+            isSearching = false
+            filteredTasks = []
         }
-         
-        isSearching = !searchText.isEmpty
-        tableView.reloadData() //перезагружаю таблицу
+       filteredTasks = tasks.filter { task in
+           return task.title.lowercased().contains(searchText.lowercased())
+       }
         
-    }
-    
+       isSearching = !searchText.isEmpty
+       tableView.reloadData() //перезагружаю таблицу
+       
+   }
+
     private func setupNavigationBar() {
         let fontName = "Apple SD Gothic Neo Bold" //шрифт заголовка
         let navBarApperarance = UINavigationBarAppearance()
@@ -77,6 +78,7 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
         navigationController?.navigationBar.standardAppearance = navBarApperarance
         navigationController?.navigationBar.scrollEdgeAppearance = navBarApperarance
         
+        //заголовок "Задачи"
         let titleLabel = UILabel()
         titleLabel.text = "Задачи"
         titleLabel.font = UIFont(name: fontName, size: 35)?.withTraits(traits: .traitBold) ?? UIFont.systemFont(ofSize: 35, weight: .bold)
@@ -88,30 +90,14 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
         titleView.addSubview(titleLabel)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleView)
         
-        
+        //кнопка для добавления задачи
         let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addTask))
         addButton.tintColor = UIColor.yellow
         navigationItem.rightBarButtonItem = addButton
-
+        
+    
     }
     
-
-    
-        @objc private func addTask() {
-            let detailViewController = DetailViewController()
-//            detailViewController.delegate = self
-            detailViewController.isNewTask = true
-            self.navigationController?.pushViewController(detailViewController, animated: true)
-        }
-    
-    func didAddTask(_ task: ToDo) {
-        tasks.append(task)
-        tableView.reloadData()
-    }
-    
-    
-
-
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return isSearching ? filteredTasks.count : tasks.count
     }
@@ -120,22 +106,27 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TaskCell", for: indexPath)
         let task = isSearching ? filteredTasks[indexPath.row] : tasks[indexPath.row] // Получаем задачу в зависимости от режима
-    
+
 
         cell.textLabel?.text = task.title
-        cell.detailTextLabel?.text = task.description
-        
-
         cell.textLabel?.textColor = UIColor.white
-        cell.detailTextLabel?.textColor = UIColor.white
-        
         cell.backgroundColor = UIColor.black
-       
+        
+        let dateString = DateToString(task.createdDate)
+        cell.detailTextLabel?.text = dateString
+        cell.detailTextLabel?.textColor = UIColor.lightGray
         return cell
     }
+
+    private func DateToString(_ date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd/MM/yy"
+        return dateFormatter.string(from: date)
+    }
+    
+    
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
         guard tasks.indices.contains(indexPath.row) else {
             printContent("Selected index is out of bounds")
             return
@@ -143,11 +134,42 @@ class TaskListViewController: UITableViewController, UITextViewDelegate, UISearc
         let selectedTask = tasks[indexPath.row]
         let detailViewController = DetailViewController()
         detailViewController.task = selectedTask
+    
+        detailViewController.isNewTask = false 
+        detailViewController.delegate = self
         navigationController?.pushViewController(detailViewController, animated: true)
     }
+    
+    
+    //функция для перехода на DetalView
+    @objc private func addTask() {
+        let detailVC = DetailViewController()
+        detailVC.delegate = self
+        detailVC.isNewTask = true
+        navigationController?.pushViewController(detailVC, animated: true)
+    }
+    
+    
+
+    func didAddTask(_ task: ToDo) {
+        if let index = tasks.firstIndex(where: { $0.id == task.id }) {
+            // Если задача уже существует, обновляем её
+            tasks[index] = task
+        } else {
+            // Иначе добавляем новую задачу
+            tasks.append(task)
+        }
+
+        // Обновляем список отфильтрованных задач, если мы ищем
+        if isSearching {
+            filteredTasks = tasks.filter { $0.title.lowercased().contains(searchBar.text?.lowercased() ?? "") }
+        }
+        tableView.reloadData()
+    }
+
 }
 
-
+//расишрение для заголовков
 extension UIFont {
  func withTraits(traits: UIFontDescriptor.SymbolicTraits) -> UIFont? {
      let descriptor = self.fontDescriptor.withSymbolicTraits(traits)
@@ -157,3 +179,8 @@ extension UIFont {
       return nil
  }
 }
+
+
+
+
+

@@ -6,8 +6,8 @@
 //
 
 import Foundation
-struct ToDo {
-    var id: Int
+struct ToDo: Codable {
+    var id: UUID
     var title:String
     var description: String
     var createdDate: Date

@@ -1,17 +1,41 @@
 import UIKit
+protocol DetailViewControllerDelegate: AnyObject {
+    func didAddTask(_ task: ToDo)
+}
 
 class DetailViewController: UIViewController, UITextViewDelegate {
-
+    var delegate: DetailViewControllerDelegate?
     var task: ToDo?
     var isNewTask: Bool = false
     var textView: UITextView!
+    var dateLabel: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad() //вызов метода род класса
         view.backgroundColor = UIColor.black
         setUpTextView()
-
+        setUpDateLabel()
+        
+        
+        textView.delegate = self
+        if let task = task {
+            textView.text = task.description
+            title = task.title
+            dateLabel.text = DateToString(task.createdDate)
+        }
+        
     }
+    
+    
+    //функция чтобы дату переделать в sring
+    private func DateToString(_ date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd/MM/yy"
+        return dateFormatter.string(from: date)
+    }
+    
+    
+    
     
     //функция для работы с текстовым объектом
     private func setUpTextView() {
@@ -23,7 +47,7 @@ class DetailViewController: UIViewController, UITextViewDelegate {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.paragraphSpacing = 20
         
-    
+        
         view.addSubview(textView)
         
         NSLayoutConstraint.activate([
@@ -31,56 +55,54 @@ class DetailViewController: UIViewController, UITextViewDelegate {
             textView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             textView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             textView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
-      ])
-        
-        //запуск делегата для сохранения и работы между классами
-        textView.delegate = self
-        
-      func getTitle() -> String {
-          let lines = textView.text.split(separator: "\n", omittingEmptySubsequences: true)
-          return lines.first.map(String.init) ?? ""
-          
-      }
-}
-    
-    
-    @objc private func addTask() -> Bool {
-        let detailViewController = DetailViewController()
-//        detailViewController.delegate = self // Устанавливаем делегата
-        detailViewController.isNewTask = true
-        if ((self.navigationController?.pushViewController(detailViewController, animated: true)) != nil) {
-         return true
-        }
-        return false
+        ])
     }
-
+    
+    private func setUpDateLabel() {
+        dateLabel = UILabel()
+        dateLabel.translatesAutoresizingMaskIntoConstraints = false
+        dateLabel.textColor = UIColor.white
+        dateLabel.font = UIFont.systemFont(ofSize: 14)
+        
+        view.addSubview(dateLabel)
+        NSLayoutConstraint.activate([
+            dateLabel.topAnchor.constraint(equalTo: textView.bottomAnchor, constant: 8),
+            dateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
+        ])
+        
+        
+    }
     
     
-    
-    
-    @objc private func saveTask() {
+    func WriteIntoTheTask() {
         guard let text = textView.text else {
             return
         }
         
         let lines = text.split(separator: "\n")
         let title = lines.first.map(String.init) ?? ""
-        let descrip = String(text)
+        let mainText = String(text)
         if isNewTask {
             let newTask = ToDo(
-                id: UUID().hashValue,
+                id: UUID(),
                 title: title,
-                description: descrip,
+                description: mainText,
                 createdDate: Date(),
                 isCompleted: false
             )
+         
+            delegate?.didAddTask(newTask)
         }
-        else if var taskToUpdate = task {
-            taskToUpdate.title = title
-            taskToUpdate.description = descrip
-            self.task = taskToUpdate
+            else if var existingTask = task {
+                existingTask.title = title
+                existingTask.description = mainText
+                existingTask.createdDate = Date()
+                delegate?.didAddTask(existingTask)
         }
-
-        navigationController?.popViewController(animated: true) // Возврат на предыдущую страницу
-        }
+    }
+    
+    func textViewDidEndEditing(_ textView: UITextView) { //функция вызывается автоматически
+        WriteIntoTheTask()
+    }
+    
 }
